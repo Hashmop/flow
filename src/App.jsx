@@ -5,6 +5,55 @@ import {
 } from 'lucide-react';
 
 const ProductivityTracker = () => {
+  const [manualTime, setManualTime] = useState({
+    study: { minutes: '' },
+    play: { minutes: '' }
+  });
+  const handleManualInputChange = (type, field, value) => {
+    setManualTime(prev => ({
+      ...prev,
+      [type]: {
+        ...prev[type],
+        [field]: value
+      }
+    }));
+  };
+  
+  // Update addManualTime to:
+  const addManualTime = (type) => {
+    const minutes = parseInt(manualTime[type].minutes) || 0;
+    if (minutes > 0) {
+      const totalSeconds = minutes * 60;
+      
+      setDailyTimers(prev => ({
+        ...prev,
+        [type]: prev[type] + totalSeconds
+      }));
+      
+      setTotalTimers(prev => ({
+        ...prev,
+        [type]: prev[type] + totalSeconds
+      }));
+
+      if (type === 'study') {
+        const today = new Date().toISOString().split('T')[0];
+        setHeatmapData(prev => 
+          prev.map(item => 
+            item.date === today
+              ? { ...item, studyTime: item.studyTime + totalSeconds }
+              : item
+          )
+        );
+        updateLevel(totalSeconds);
+      }
+
+      setManualTime(prev => ({
+        ...prev,
+        [type]: { minutes: '' }
+      }));
+    }
+  };
+
   // Timer States
   const [dailyTimers, setDailyTimers] = useState(() => {
     const saved = localStorage.getItem('productivityDailyTimers');
@@ -195,7 +244,7 @@ const ProductivityTracker = () => {
       { min: 16, title: 'B-Rank Hunter', color: '#FF6347' },
       { min: 11, title: 'C-Rank Hunter', color: '#FFD700' },
       { min: 6, title: 'D-Rank Hunter', color: '#ADFF2F' },
-      { min: 1, title: 'E-Rank Hunter', color: '#90EE90' }
+      { min: 2, title: 'E-Rank Hunter', color: '#90EE90' }
     ];
     return titles.find(t => level >= t.min) || { title: 'Weakest Hunter', color: '#808080' };
   };
@@ -415,31 +464,9 @@ const ProductivityTracker = () => {
                     value={`${totalProductivity}%`} 
                     icon={<Clock className="text-purple-400" />}
                   />
-                  <StatCard 
-                    title="Study Hours" 
-                    value={`${totalStudyHours}h`} 
-                    icon={<Star className="text-amber-400" />}
-                  />
                 </div>
               </div>
 
-              <div className="bg-gray-700 p-4 rounded-xl">
-                <h3 className="text-lg font-semibold mb-3">Achievements</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-cyan-600 rounded-full flex items-center justify-center">
-                      <Trophy size={16} />
-                    </div>
-                    <span>Reached Level {level}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
-                      <BookOpen size={16} />
-                    </div>
-                    <span>Studied {totalStudyHours}+ hours</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -523,13 +550,33 @@ const ProductivityTracker = () => {
                 {type === 'study' && <BookOpen className="mx-auto mb-2 text-cyan-400" />}
                 {type === 'play' && <Gamepad className="mx-auto mb-2 text-green-400" />}
                 {type === 'idle' && <Clock className="mx-auto mb-2 text-gray-400" />}
-                <h3 className="font-semibold uppercase text-gray-300">{type}</h3>
-                <p className="text-white">
+                
+                <h3 className="font-semibold uppercase text-gray-300 mb-2">{type}</h3>
+                <p className="text-white mb-2">
                   {formatTime(activeTimer === type ? currentTime : dailyTimers[type])}
                 </p>
+
+                {/* Add this input for study/play */}
+                {(type === 'study' || type === 'play') && (
+                  <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="number"
+                      placeholder="+ Add mins"
+                      value={manualTime[type].minutes}
+                      onChange={(e) => handleManualInputChange(type, 'minutes', e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && addManualTime(type)}
+                      className="w-full bg-gray-800 text-white px-2 py-1 rounded text-sm text-center
+                                focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder-gray-400
+                                [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none
+                                [&::-webkit-inner-spin-button]:appearance-none"
+                      min="0"
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
+
 
           {activeTimer && (
             <div className="flex justify-center space-x-4 mb-6">
@@ -545,7 +592,9 @@ const ProductivityTracker = () => {
               >
                 <RefreshCw />
               </button>
+              
             </div>
+            
           )}
 
           <div className="p-6 bg-gray-700 rounded-lg mb-6">
