@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import MusicPlayer from './MusicPlayer';
 import { 
   Clock, BookOpen, Gamepad, Pause, RefreshCw, ChevronLeft, 
-  ChevronRight, PlusCircle, Trash2, Edit, Check, User, X, Camera, Trophy, Star
+  ChevronRight, PlusCircle, Trash2, Edit, Check, User, X, Camera, Trophy, Star,
+  Music  
 } from 'lucide-react';
 
 const ProductivityTracker = () => {
@@ -121,6 +123,8 @@ const ProductivityTracker = () => {
   const [profilePicture, setProfilePicture] = useState(() => {
     return localStorage.getItem('productivityProfilePic') || null;
   });
+  //music
+  const [showMusicPlayer, setShowMusicPlayer] = useState(false);
 
   // Daily Reset Logic
   useEffect(() => {
@@ -465,6 +469,7 @@ const ProductivityTracker = () => {
                     icon={<Clock className="text-purple-400" />}
                   />
                 </div>
+                
               </div>
 
             </div>
@@ -676,6 +681,17 @@ const ProductivityTracker = () => {
           </div>
         </div>
       </div>
+      <button 
+      onClick={() => setShowMusicPlayer(!showMusicPlayer)}
+      className="fixed bottom-4 left-4 p-3 bg-cyan-600 rounded-full hover:bg-cyan-500 text-white shadow-lg z-50"
+    >
+      <Music size={24} />
+    </button>
+
+    {/* Conditional components */}
+    {showMusicPlayer && <MusicPlayer />}
+    {isProfileOpen && <ProfileModal />}
+      <MusicPlayer />
 
       {isProfileOpen && <ProfileModal />}
     </div>
